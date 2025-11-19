@@ -1,6 +1,8 @@
 # Repeater64
 Collection of 4 small N64 demos that are hard to emulate.
 
+ROM and reference footage can be found under releases.
+
 ## Demo 1 - Syncs
 Draws an image to the screen in such a way that on console you see a different image than on an emulator.<br> 
 This works by drawing the image pixel by pixel with color-rectangles in fill-mode.<br>
