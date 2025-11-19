@@ -11,14 +11,21 @@ namespace {
   constexpr uint32_t FMT_BUFF_SIZE = 128;
 
   constinit int fbStride = 0x800;
+  constinit uint16_t currColor = 0xFFFF;
 
   #include "font.h"
   #include "font64.h"
 }
 
+void Text::setColor(color_t color)
+{
+  currColor = color_to_packed16(color);
+}
+
 int Text::print(int x, int y, const char *str) {
   auto fbBuff = (uint8_t*)state.fb->buffer;
   uint64_t *buffStart = (uint64_t*)&fbBuff[y * fbStride + x*2];
+  uint64_t col = (uint64_t)currColor;
 
   while(*str)
   {
@@ -32,10 +39,10 @@ int Text::print(int x, int y, const char *str) {
     {
       for(int y=0; y<8; ++y) {
         for(int x=0; x<2; ++x) {
-          val  = (charData & 0b0001) ? ((uint64_t)0xFFFF << 48) : 0;
-          val |= (charData & 0b0010) ? ((uint64_t)0xFFFF << 32) : 0;
-          val |= (charData & 0b0100) ? ((uint64_t)0xFFFF << 16) : 0;
-          val |= (charData & 0b1000) ? ((uint64_t)0xFFFF <<  0) : 0;
+          val  = (charData & 0b0001) ? (col << 48) : 0;
+          val |= (charData & 0b0010) ? (col << 32) : 0;
+          val |= (charData & 0b0100) ? (col << 16) : 0;
+          val |= (charData & 0b1000) ? (col <<  0) : 0;
 
           *buff = val;
           charData >>= 4;

@@ -3,7 +3,6 @@
 * @license MIT
 */
 #include <cmath>
-#include "demoVIPong.h"
 #include "../main.h"
 #include "../rdp/rdp.h"
 #include "../rdp/dpl.h"
@@ -136,102 +135,107 @@ namespace {
   }
 }
 
-void Demo::VIPong::init()
+namespace Demo::VIPong
 {
-  paddlePosX[0] = 0;
-  paddlePosX[1] = 0;
-  ballPos[0] = 0;
-  ballPos[1] = 0;
-  points[0] = 0;
-  points[1] = 0;
-  respawn();
-}
+  extern const char* const name = "VI Pong";
 
-void Demo::VIPong::destroy() {
-
-}
-
-void Demo::VIPong::draw()
-{
-  RDP::DPL dpl{64};
-  dpl.add(RDP::syncPipe())
-    .add(RDP::setColorImage(state.fb->buffer, RDP::Format::RGBA, RDP::BBP::_16, state.fb->stride/2))
-    .add(RDP::setScissor(0, 0, state.fb->width-1, state.fb->height-1))
-    .add(RDP::setOtherModes(RDP::OtherMode()
-      .cycleType(RDP::CYCLE::FILL)
-    ))
-    // 2 paddles
-    .add(RDP::syncPipe())
-    .add(RDP::setFillColor({0xAA, 0xFF, 0xAA, 0xFF}))
-    .add(RDP::fillRect(0,PADDLE_POS_Y[0], PADDLE_WIDTH, PADDLE_POS_Y[0] + PADDLE_HEIGHT))
-    .add(RDP::syncPipe())
-    .add(RDP::setFillColor({0x11, 0x11, 0x11, 0xFF}))
-    .add(RDP::fillRect(5, PADDLE_POS_Y[0]+2, PADDLE_WIDTH-2, PADDLE_POS_Y[0] + PADDLE_HEIGHT-2))
-
-    .add(RDP::syncPipe())
-    .add(RDP::setFillColor({0xFF, 0xAA, 0xAA, 0xFF}))
-    .add(RDP::fillRect(0,PADDLE_POS_Y[1], PADDLE_WIDTH, PADDLE_POS_Y[1] + PADDLE_HEIGHT))
-    .add(RDP::syncPipe())
-    .add(RDP::setFillColor({0x11, 0x11, 0x11, 0xFF}))
-    .add(RDP::fillRect(5, PADDLE_POS_Y[1]+2, PADDLE_WIDTH-2, PADDLE_POS_Y[1] + PADDLE_HEIGHT-2))
-
-    // ball, stretches entire height
-    .add(RDP::syncPipe())
-    .add(RDP::setFillColor({0x66, 0x66, 0xFF, 0xFF}))
-    .add(RDP::fillRect(0, BALL_START_Y + 2, 16, PADDLE_POS_Y[1] - 2))
-    .runAsync();
-
-  updateGame();
-
-  uint32_t orgHVideo = *VI_H_VIDEO;
-  uint32_t lastLine = *VI_V_CURRENT;
-
-  if(state.frame < 3)return;
-
-  //vi_debug_dump(1);
-
-  constexpr int startLine = 20;
-
-  while(lastLine < 480) {
-    uint32_t scanLine = *VI_V_CURRENT;
-    if(scanLine != lastLine) {
-      if(lastLine > startLine) {
-
-        int pixelStart = 108;
-        int pixelEnd = 748;
-
-        // paddle 0
-        if(scanLine >= linePaddle0Start && scanLine <= linePaddle0End) {
-            pixelStart += paddlePosX[0] * 2;
-        }
-
-        // paddle 1
-        if(scanLine > lineBallEnd) {
-          pixelStart += paddlePosX[1] * 2;
-        } else if(scanLine > linePaddle0End) {
-          // ball
-          if(scanLine >= scanlineBall && scanLine <= scanlineBallEnd) {
-            pixelStart += (int)ballPos[0]*2;
-          } else {
-            pixelStart = 0;
-            pixelEnd = 0;
-          }
-        }
-
-        MEMORY_BARRIER();
-        *VI_H_VIDEO = pixelEnd | (pixelStart << 16);
-        MEMORY_BARRIER();
-
-      }
-      lastLine = scanLine;
-    }
+  void init()
+  {
+    paddlePosX[0] = 0;
+    paddlePosX[1] = 0;
+    ballPos[0] = 0;
+    ballPos[1] = 0;
+    points[0] = 0;
+    points[1] = 0;
+    respawn();
   }
 
-  MEMORY_BARRIER();
-  *VI_H_VIDEO = orgHVideo;
-  MEMORY_BARRIER();
+  void destroy() {
 
-  Text::print(16, 240-16, "[VI-Pong]");
+  }
 
-  Text::printf(140, 240-16, "Points: %d ~ %d", points[0], points[1]);
+  void draw()
+  {
+    RDP::DPL dpl{64};
+    dpl.add(RDP::syncPipe())
+      .add(RDP::setColorImage(state.fb->buffer, RDP::Format::RGBA, RDP::BBP::_16, state.fb->stride/2))
+      .add(RDP::setScissor(0, 0, state.fb->width-1, state.fb->height-1))
+      .add(RDP::setOtherModes(RDP::OtherMode()
+        .cycleType(RDP::CYCLE::FILL)
+      ))
+      // 2 paddles
+      .add(RDP::syncPipe())
+      .add(RDP::setFillColor({0xAA, 0xFF, 0xAA, 0xFF}))
+      .add(RDP::fillRect(0,PADDLE_POS_Y[0], PADDLE_WIDTH, PADDLE_POS_Y[0] + PADDLE_HEIGHT))
+      .add(RDP::syncPipe())
+      .add(RDP::setFillColor({0x11, 0x11, 0x11, 0xFF}))
+      .add(RDP::fillRect(5, PADDLE_POS_Y[0]+2, PADDLE_WIDTH-2, PADDLE_POS_Y[0] + PADDLE_HEIGHT-2))
+
+      .add(RDP::syncPipe())
+      .add(RDP::setFillColor({0xFF, 0xAA, 0xAA, 0xFF}))
+      .add(RDP::fillRect(0,PADDLE_POS_Y[1], PADDLE_WIDTH, PADDLE_POS_Y[1] + PADDLE_HEIGHT))
+      .add(RDP::syncPipe())
+      .add(RDP::setFillColor({0x11, 0x11, 0x11, 0xFF}))
+      .add(RDP::fillRect(5, PADDLE_POS_Y[1]+2, PADDLE_WIDTH-2, PADDLE_POS_Y[1] + PADDLE_HEIGHT-2))
+
+      // ball, stretches entire height
+      .add(RDP::syncPipe())
+      .add(RDP::setFillColor({0x66, 0x66, 0xFF, 0xFF}))
+      .add(RDP::fillRect(0, BALL_START_Y + 2, 16, PADDLE_POS_Y[1] - 2))
+      .runAsync();
+
+    updateGame();
+
+    uint32_t orgHVideo = *VI_H_VIDEO;
+    uint32_t lastLine = *VI_V_CURRENT;
+
+    if(state.frame < 3)return;
+
+    //vi_debug_dump(1);
+
+    constexpr int startLine = 20;
+
+    while(lastLine < 480) {
+      uint32_t scanLine = *VI_V_CURRENT;
+      if(scanLine != lastLine) {
+        if(lastLine > startLine) {
+
+          int pixelStart = 108;
+          int pixelEnd = 748;
+
+          // paddle 0
+          if(scanLine >= linePaddle0Start && scanLine <= linePaddle0End) {
+            pixelStart += paddlePosX[0] * 2;
+          }
+
+          // paddle 1
+          if(scanLine > lineBallEnd) {
+            pixelStart += paddlePosX[1] * 2;
+          } else if(scanLine > linePaddle0End) {
+            // ball
+            if(scanLine >= scanlineBall && scanLine <= scanlineBallEnd) {
+              pixelStart += (int)ballPos[0]*2;
+            } else {
+              pixelStart = 0;
+              pixelEnd = 0;
+            }
+          }
+
+          MEMORY_BARRIER();
+          *VI_H_VIDEO = pixelEnd | (pixelStart << 16);
+          MEMORY_BARRIER();
+
+        }
+        lastLine = scanLine;
+      }
+    }
+
+    MEMORY_BARRIER();
+    *VI_H_VIDEO = orgHVideo;
+    MEMORY_BARRIER();
+
+    Text::print(16, 240-16, "[VI-Pong]");
+
+    Text::printf(140, 240-16, "Points: %d ~ %d", points[0], points[1]);
+  }
 }

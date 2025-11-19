@@ -13,6 +13,17 @@ assets_conv = $(patsubst assets/%,filesystem/%,$(assets_png:%.png=%.sprite))
 
 all: $(PROJECT_NAME).z64
 
+# Generate demoList.h by scanning files in src/demos/
+src/demoList.h: $(wildcard src/demos/*.cpp)
+	@echo "    [DEMO LIST] $@"
+	@echo "// This file is auto-generated. Do not edit directly." > $@
+	@for f in $(wildcard src/demos/*.cpp); do \
+		name=$$(basename $$f .cpp); \
+		echo "DEMO_ENTRY($$name)" >> $@; \
+	done
+
+$(BUILD_DIR)/src/main.o: src/demoList.h
+
 filesystem/%.sprite: assets/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
@@ -42,7 +53,7 @@ sc64r:
 	curl 192.168.0.6:9065/reset
 
 clean:
-	rm -rf $(BUILD_DIR) *.z64
+	rm -rf $(BUILD_DIR) *.z64 src/demoList.h
 
 -include $(wildcard $(BUILD_DIR)/*.d)
 

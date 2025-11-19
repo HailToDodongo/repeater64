@@ -3,7 +3,6 @@
 * @license MIT
 */
 #include <libdragon.h>
-#include "demoRepeat.h"
 #include "../miMemory.h"
 #include "../math.h"
 #include "../main.h"
@@ -53,53 +52,57 @@ namespace
   constinit bool isEmu{false};
 }
 
-void Demo::Repeat::init() {
-  isEmu = !MiMem::isSupported();
-}
-
-void Demo::Repeat::draw()
+namespace Demo::Repeat
 {
-  uint32_t rowStride = state.fb->stride;
-  auto fb = (uint8_t*)state.fb->buffer;
+  extern const char* const name = "MI-Repeat Mode";
 
-  disable_interrupts();
-
-  uint32_t baseLineSize = 40;
-  float sinBase = 0;
-  uint32_t idxStart = 0;
-
-  uint64_t col=0;
-
-  for(int i=0; i<240; ++i) {
-    //if(i % 2 == 0)continue;
-    sinBase += 0.03f;
-    float offset  = Math::sinApprox(sinBase + state.time) * 0.5f;
-    float offsetB = Math::sinApprox(sinBase * 5.0f + state.time*1.5f);
-    float offsetC = Math::sinApprox(sinBase * 15.0f + state.time*1.7f);
-    offset += offsetB * 0.2f + offsetC * 0.1f;
-
-    uint32_t idxOffset = 200 + ((int)(offset*128) & ~0b1);
-    uint32_t idx = idxStart + idxOffset;
-
-    uint32_t lineSize = baseLineSize + (offsetB * offset * 40);
-    lineSize &= ~1;
-
-    int bytesLeft = (320 * 2) - idxOffset - lineSize;
-
-    int stripeOff = state.time * 25;
-    uint64_t colBG = BG_COLORS[((i+stripeOff)/8) & 0b11];
-
-    col = getRainbowColor(i * 128 - state.timeInt);
-
-    MiMem::write(&fb[idxStart],     colBG, idxOffset);
-    MiMem::write(&fb[idx],          col,   lineSize);
-    MiMem::write(&fb[idx+lineSize], colBG, bytesLeft);
-
-    idxStart += rowStride;
-    ++baseLineSize;
+  void init() {
+    isEmu = !MiMem::isSupported();
   }
 
-  // Text
+  void draw()
+  {
+    uint32_t rowStride = state.fb->stride;
+    auto fb = (uint8_t*)state.fb->buffer;
+
+    disable_interrupts();
+
+    uint32_t baseLineSize = 40;
+    float sinBase = 0;
+    uint32_t idxStart = 0;
+
+    uint64_t col=0;
+
+    for(int i=0; i<240; ++i) {
+      //if(i % 2 == 0)continue;
+      sinBase += 0.03f;
+      float offset  = Math::sinApprox(sinBase + state.time) * 0.5f;
+      float offsetB = Math::sinApprox(sinBase * 5.0f + state.time*1.5f);
+      float offsetC = Math::sinApprox(sinBase * 15.0f + state.time*1.7f);
+      offset += offsetB * 0.2f + offsetC * 0.1f;
+
+      uint32_t idxOffset = 200 + ((int)(offset*128) & ~0b1);
+      uint32_t idx = idxStart + idxOffset;
+
+      uint32_t lineSize = baseLineSize + (offsetB * offset * 40);
+      lineSize &= ~1;
+
+      int bytesLeft = (320 * 2) - idxOffset - lineSize;
+
+      int stripeOff = state.time * 25;
+      uint64_t colBG = BG_COLORS[((i+stripeOff)/8) & 0b11];
+
+      col = getRainbowColor(i * 128 - state.timeInt);
+
+      MiMem::write(&fb[idxStart],     colBG, idxOffset);
+      MiMem::write(&fb[idx],          col,   lineSize);
+      MiMem::write(&fb[idx+lineSize], colBG, bytesLeft);
+
+      idxStart += rowStride;
+      ++baseLineSize;
+    }
+
+    // Text
     int textPosX = 310 - (state.time * 16.0f);
     Text::printLarge(textPosX, 68, "{MI-Repeat Mode}", {
       .color = packColor({0, 0, 0, 0xFF}),
@@ -122,4 +125,10 @@ void Demo::Repeat::draw()
     }
 
     enable_interrupts();
+  }
+
+  void destroy()
+  {
+
+  }
 }

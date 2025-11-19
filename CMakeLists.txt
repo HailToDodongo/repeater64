@@ -16,12 +16,13 @@ add_executable(rep64
         src/main.cpp
         src/text.cpp
         src/miMemory.cpp
-        src/demos/demoRepeat.cpp
-        src/demos/demoSync.cpp
+        src/demos/Repeat.cpp
+        src/demos/Sync.cpp
         src/rdp/rdp.h
         src/rdp/rdp.cpp
-        src/demos/demoVI.cpp
-        src/demos/demoVIPong.cpp
-        src/demos/demoRaymarch.cpp)
+        src/demos/VI.cpp
+        src/demos/VIPong.cpp
+        src/demos/demoRaymarch.cpp
+        src/demoList.h)
 
 set_property(TARGET rep64 PROPERTY CXX_STANDARD 23)

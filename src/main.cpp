@@ -3,18 +3,19 @@
 * @license MIT
 */
 #include <libdragon.h>
-#include <utility>
+#include <vector>
 #include "text.h"
 #include "main.h"
 
-// Demos
-#include "demos/demoVI.h"
-#include "demos/demoRepeat.h"
-#include "demos/demoSync.h"
-#include "demos/demoVIPong.h"
+#define DEMO_ENTRY(X) namespace Demo::X { \
+  void init(); void draw(); void destroy(); extern const char* const name; \
+}
+
+#include "demoList.h"
+#undef DEMO_ENTRY
 
 namespace {
-  void testText()
+  /*void testText()
   {
     int posY = 32;
     for(int i=0; i<4; ++i) {
@@ -25,7 +26,7 @@ namespace {
       Text::print(16, posY, "'\",.<>/?\\|`~"); posY += 8;
       posY += 8;
     }
-  }
+  }*/
 
   typedef void (*DemoFunc)();
 
@@ -34,23 +35,12 @@ namespace {
     DemoFunc init{};
     DemoFunc draw{};
     DemoFunc destroy{};
+    const char* name{};
   };
-
-  constinit DemoEntry demos[] = {
-    {}, // dummy entry
-    {Demo::Sync::init,   Demo::Sync::draw,   Demo::Sync::destroy},
-    {Demo::Repeat::init, Demo::Repeat::draw, nullptr},
-    {Demo::VI::init,     Demo::VI::draw,     Demo::VI::destroy},
-    {Demo::VIPong::init, Demo::VIPong::draw, Demo::VIPong::destroy},
-    //{nullptr, testText, nullptr}
-  };
-  constexpr uint32_t DEMO_COUNT = sizeof(demos) / sizeof(DemoEntry);
 
   constinit uint64_t frameTime = 0;
-  constinit uint32_t currDemo = 0;
+  constinit uint32_t currDemo = 0xFFFF;
   constinit uint32_t nextDemo = 1;
-
-  constinit uint32_t infoTextCounter = 60*4;
 
   volatile int freeFB = 3;
   void on_vi_frame_ready()
@@ -61,6 +51,47 @@ namespace {
     }
     enable_interrupts();
   }
+
+  std::vector<DemoEntry> demos{};
+  uint32_t nextDemoSel = 1;
+
+  void demoMenuDraw()
+  {
+    memset(state.fb->buffer, 0, state.fb->height * state.fb->stride);
+
+    auto press = joypad_get_buttons_pressed(JOYPAD_PORT_1);
+    if(press.d_up || press.c_up)--nextDemoSel;
+    if(press.d_down || press.c_down)++nextDemoSel;
+    if(nextDemoSel == 0)nextDemoSel = demos.size()-1;
+    if(nextDemoSel >= demos.size())nextDemoSel = 1;
+
+    if(press.a || press.b) {
+      nextDemo = nextDemoSel;
+    }
+
+    constexpr color_t colSel{0x66, 0x66, 0xFF};
+
+    for(uint32_t i = 1; i < demos.size(); ++i) {
+      Text::setColor(i == nextDemoSel ? colSel : color_t{0xFF, 0xFF, 0xFF});
+      Text::print(40, 26 + i * 10, demos[i].name);
+    }
+
+    Text::setColor(colSel);
+    Text::print(28, 26 + nextDemoSel * 10 - 1, ">");
+    Text::setColor();
+
+    int posY = 160;
+    Text::print(20, posY, "UP/DOWN/A - Select"); posY += 10;
+    Text::print(20, posY, "Start     - Open this Menu"); posY += 10;
+    Text::print(20, posY, "L/R       - Toggle Demo"); posY += 10;
+
+    posY += 10;
+
+    Text::setColor({0x66, 0xFF, 0x33});
+    Text::print(20, posY, "Repo:"); posY += 10;
+    Text::print(20, posY, "github.com/HailToDodongo/repeater64"); posY += 10;
+    Text::setColor();
+  }
 }
 
 constinit State state{};
@@ -68,6 +99,13 @@ constinit State state{};
 [[noreturn]]
 int main()
 {
+  #define DEMO_ENTRY(X) {Demo::X::init, Demo::X::draw, Demo::X::destroy, Demo::X::name},
+  demos = {
+    DemoEntry{.draw = demoMenuDraw},
+    #include "demoList.h"
+  };
+  #undef DEMO_ENTRY
+
   debug_init_isviewer();
   debug_init_usblog();
 
@@ -107,9 +145,11 @@ int main()
     }
 
     joypad_poll();
+    auto held = joypad_get_buttons_held(JOYPAD_PORT_1);
     auto press = joypad_get_buttons_pressed(JOYPAD_PORT_1);
-    if(press.r){ nextDemo = (currDemo + 1) % DEMO_COUNT; if(nextDemo == 0)nextDemo = 1; }
-    if(press.l){ nextDemo = (currDemo - 1) % DEMO_COUNT; if(nextDemo == 0)nextDemo = DEMO_COUNT-1; }
+    if(press.r){ nextDemo = (currDemo + 1) % demos.size(); if(nextDemo == 0)nextDemo = 1; }
+    if(press.l){ nextDemo = (currDemo - 1) % demos.size(); if(nextDemo == 0)nextDemo = demos.size()-1; }
+    if(press.start)nextDemo = 0;
 
     while(freeFB == 0) {
       vi_wait_vblank();
@@ -131,7 +171,9 @@ int main()
       state.tripleBuffer = true;
       state.showFrameTime = true;
 
-      if(demos[currDemo].destroy)demos[currDemo].destroy();
+      if(currDemo < demos.size() && demos[currDemo].destroy) {
+        demos[currDemo].destroy();
+      }
 
       // clear all 3 framebuffers to black
       for(int i=0; i<3; ++i) {
@@ -146,11 +188,6 @@ int main()
 
     if(state.showFrameTime) {
       Text::printf(16, 16, "%.2fms", TICKS_TO_US(frameTime) * (1.0f / 1000.0f));
-    }
-
-    if(infoTextCounter) {
-      Text::print(80, 10 + infoTextCounter/6, "Press L/R To change Demo");
-      --infoTextCounter;
     }
 
     frameTime = get_ticks() - t;

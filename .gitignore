@@ -5,3 +5,5 @@ cmake*/
 .idea/
 *.o
 node_modules/
+
+src/demoList.h
