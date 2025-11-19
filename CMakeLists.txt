@@ -22,7 +22,8 @@ add_executable(rep64
         src/rdp/rdp.cpp
         src/demos/VI.cpp
         src/demos/VIPong.cpp
-        src/demos/demoRaymarch.cpp
-        src/demoList.h)
+        src/demoList.h
+        src/demos/HiddenBits.cpp
+        src/demos/HiddenBits.cpp)
 
 set_property(TARGET rep64 PROPERTY CXX_STANDARD 23)

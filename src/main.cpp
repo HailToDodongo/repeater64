@@ -40,7 +40,7 @@ namespace {
 
   constinit uint64_t frameTime = 0;
   constinit uint32_t currDemo = 0xFFFF;
-  constinit uint32_t nextDemo = 1;
+  constinit uint32_t nextDemo = 0;
 
   volatile int freeFB = 3;
   void on_vi_frame_ready()

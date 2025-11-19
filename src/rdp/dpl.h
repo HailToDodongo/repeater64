@@ -58,11 +58,15 @@ namespace RDP
       MEMORY_BARRIER();
     }
 
-    void runSync() {
-      add(RDP::syncFull());
-      runAsync();
+    void await() {
       MEMORY_BARRIER();
       while (*DP_STATUS & DP_STATUS_PIPE_BUSY) {};
+    }
+
+    void runSync() {
+      add(syncFull());
+      runAsync();
+      await();
     }
   };
 }
