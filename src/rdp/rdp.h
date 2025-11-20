@@ -372,6 +372,12 @@ namespace RDP
     constexpr OtherMode& setBlender(uint64_t blend) {
       value |= blend; return *this;
     }
+    constexpr OtherMode& setImageRead(bool on) {
+      value |= bitVal(on ? 1 : 0, 6, 6); return *this;
+    }
+    constexpr OtherMode& setDepthWrite(bool on) {
+      value |= bitVal(on ? 1 : 0, 5, 5); return *this;
+    }
 
     operator uint64_t() const { return value; }
   };
