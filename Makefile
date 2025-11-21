@@ -8,8 +8,9 @@ N64_CXXFLAGS += -std=gnu++20 -Os -fno-exceptions -fsingle-precision-constant
 src = $(wildcard src/*.cpp) $(wildcard src/demos/*.cpp) $(wildcard src/rdp/*.cpp)
 
 assets_png = $(wildcard assets/*.rgba16.png)
-
+assets_test = $(wildcard assets/*.test)
 assets_conv = $(patsubst assets/%,filesystem/%,$(assets_png:%.png=%.sprite))
+assets_conv += $(patsubst assets/%,filesystem/%,$(assets_test:%.test=%.test))
 
 all: $(PROJECT_NAME).z64
 
@@ -28,6 +29,12 @@ filesystem/%.sprite: assets/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
 	$(N64_MKSPRITE) $(MKSPRITE_FLAGS) -o $(dir $@) "$<"
+
+filesystem/%.test: assets/%.test
+	@mkdir -p $(dir $@)
+	@echo "    [TEST-DUMP] $@ $<"
+	cp "$<" $@
+	$(N64_BINDIR)/mkasset -c 1 -o $(dir $@) $@
 
 $(BUILD_DIR)/$(PROJECT_NAME).dfs: $(assets_conv)
 $(BUILD_DIR)/$(PROJECT_NAME).elf: $(src:%.cpp=$(BUILD_DIR)/%.o)
@@ -54,6 +61,7 @@ sc64r:
 
 clean:
 	rm -rf $(BUILD_DIR) *.z64 src/demoList.h
+	rm -rf filesystem
 
 -include $(wildcard $(BUILD_DIR)/*.d)
 

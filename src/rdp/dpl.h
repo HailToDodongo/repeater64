@@ -49,6 +49,14 @@ namespace RDP
       return *this;
     }
 
+    void runAsyncUnsafe() const {
+      MEMORY_BARRIER();
+      *DP_START = PhysicalAddr(dpl);
+      MEMORY_BARRIER();
+      *DP_END = PhysicalAddr(dplEnd);
+      MEMORY_BARRIER();
+    }
+
     void runAsync() const {
       while (*DP_STATUS & DP_STATUS_DMA_BUSY) {};
       MEMORY_BARRIER();
@@ -58,15 +66,19 @@ namespace RDP
       MEMORY_BARRIER();
     }
 
-    void await() {
+    void await(uint64_t waitTicks = 0) {
       MEMORY_BARRIER();
-      while (*DP_STATUS & DP_STATUS_PIPE_BUSY) {};
+      uint64_t endTicks = get_ticks() + waitTicks;
+      while (*DP_STATUS & DP_STATUS_PIPE_BUSY)
+      {
+        if (waitTicks != 0 && get_ticks() > endTicks)break;
+      }
     }
 
-    void runSync() {
+    void runSync(uint64_t waitTicks = 0) {
       add(syncFull());
       runAsync();
-      await();
+      await(waitTicks);
     }
   };
 }
