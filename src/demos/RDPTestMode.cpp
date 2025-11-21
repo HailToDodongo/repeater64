@@ -2,12 +2,13 @@
 * @copyright 2025 - Max Bebök
 * @license MIT
 */
-#include <cmath>
-
 #include "../main.h"
 #include "../rdp/rdp.h"
 #include "../rdp/dpl.h"
 #include "../text.h"
+
+#include <array>
+#include <cmath>
 
 #define DP_TEST_MODE ((volatile uint32_t*)0xA420'0004)
 #define DP_BUFTEST_ADDR ((volatile uint32_t*)0xA420'0008)
@@ -85,8 +86,9 @@ namespace Demo::RDPTestMode
 
   void draw()
   {
+    auto held = joypad_get_inputs(JOYPAD_PORT_1);
 
-    color_t prim = getRainbowColor(state.frame * 150);
+    color_t prim = getRainbowColor(state.timeInt * 3);
 
     RDP::DPL dpl{128};
     dpl.add(RDP::syncPipe())
@@ -119,8 +121,8 @@ namespace Demo::RDPTestMode
     constexpr float size = 24;
 
     int pixelCount = 0;
-    float h = (fm_sinf(state.frame * 0.01f)*0.5f+0.5f) * size;
-    float w = (fm_sinf(state.frame * 0.02f + 2.0f)*0.5f+0.6f) * size;
+    float h = (fm_sinf(state.time * 0.5f)*0.5f+0.5f) * size;
+    float w = (fm_sinf(state.time * 0.1f + 2.0f)*0.5f+0.6f) * size;
 
     int posY = 32;
     for(int y=0; y<size; ++y)
@@ -131,8 +133,17 @@ namespace Demo::RDPTestMode
       RDPBuff::clear();
       RDPBuff::disable();
 
-      int wobbleOffset = (int)(fm_sinf(state.frame * 0.07f + y * 0.4f) * 2.4f) + 4;
+      int wobbleOffset = (int)(fm_sinf(state.time * 2.2f + y * 0.4f) * 2.4f) + 4;
       if(wobbleOffset < 0)wobbleOffset = 0;
+
+      if(held.btn.a || held.btn.b)
+      {
+        wobbleOffset = 0;
+        w = size;
+        h = size / 2;
+        h += (held.stick_y * -0.125f);
+        w += (held.stick_x * 0.125f);
+      }
 
       auto triData = RDP::triangleGen(RDP::TriAttr::SHADE, {
         .pos = {triOffset[0] + wobbleOffset, triOffset[1] + 0.0f},
@@ -218,29 +229,63 @@ namespace Demo::RDPTestMode
     // Write test, this simply checks if the region is writable
     // and handled masking correctly
 
-    RDPBuff::write(0, 0xDEAD'BEEF);
-    RDPBuff::write(1, 0x1234'5678);
-    RDPBuff::write(2, 0xDEAD'BEEF);
-    RDPBuff::write(3, 0x1234'5678);
+    struct TestVal{ uint32_t write; uint32_t read; };
+    constexpr auto TEST_VALUES = std::to_array({TestVal
+      {0xDEAD'BEEF, 0xDEAD'BEEF},
+      {0x1234'5678, 0x1234'5678},
+      {0xBADD'CAFE, 0x0000'00FE},
+      {0x9876'5432, 0x0000'0000},
 
-    bool pass0 = RDPBuff::read(0) == 0xDEAD'BEEF;
-    bool pass1 = RDPBuff::read(1) == 0x1234'5678;
-    bool pass2 = RDPBuff::read(2) == 0x0000'00EF;
-    bool pass3 = RDPBuff::read(3) == 0x0000'0000;
+      {0x1111'1111, 0x1111'1111},
+      {0x2222'2222, 0x2222'2222},
+      {0x3333'3333, 0x0000'0033},
+      {0x4444'4444, 0x0000'0000},
 
-    Text::printf(80, 16, "Mask-R/W: %s %s %s %s",
-      pass0 ? "OK" : "FAIL", pass1 ? "OK" : "FAIL",
-      pass2 ? "OK" : "FAIL", pass3 ? "OK" : "FAIL"
-    );
+      {0x5555'5555, 0x5555'5555},
+      {0x6666'6666, 0x6666'6666},
+      {0x7777'7777, 0x0000'0077},
+      {0x8888'8888, 0x0000'0000},
+
+      {0x9999'9999, 0x9999'9999},
+      {0xAAAA'AAAA, 0xAAAA'AAAA},
+      {0xBBBB'BBBB, 0x0000'00BB},
+      {0xCCCC'CCCC, 0x0000'0000},
+    });
+
+    for(uint32_t i=0; i<TEST_VALUES.size(); ++i) {
+      RDPBuff::write(i, TEST_VALUES[i].write);
+    }
+
+    MEMORY_BARRIER();
 
     Text::setColor({0xFF, 0x99, 0x99});
-    if(!pass0)Text::printf(208, 48+8,  "0: %08X", RDPBuff::read(0));
-    if(!pass1)Text::printf(208, 48+16, "1: %08X", RDPBuff::read(1));
-    if(!pass2)Text::printf(208, 48+24, "2: %08X", RDPBuff::read(2));
-    if(!pass3)Text::printf(208, 48+32, "3: %08X", RDPBuff::read(3));
-    if(pixelCount < 16)Text::printf(208, 48+48, "Span: FAIL", pixelCount);
+
+    int textY = 52;
+    int okCount = 0;
+    for(uint32_t i=0; i<TEST_VALUES.size(); ++i)
+    {
+      bool pass = RDPBuff::read(i) == TEST_VALUES[i].read;
+      okCount += pass ? 1 : 0;
+      if(!pass) {
+        Text::printf(148, textY,  "%01X:%08X!=%08X", i, RDPBuff::read(i), TEST_VALUES[i].read);
+        textY += 8;
+      }
+    }
+
     Text::setColor();
 
+    Text::printf(80, 16, "Span-R/W: %d/%d (%s)",
+      okCount, (int)TEST_VALUES.size(),
+      okCount == (int)TEST_VALUES.size() ? "OK" : "FAIL!"
+    );
+    Text::print(80, 24,
+      pixelCount > 16 ? "Span-Test: OK" : "Span-Test: FAIL!"
+    );
+
     RDPBuff::disable();
+
+    Text::setSpaceHidden(false);
+    Text::print(176, 220, "A+Stick - Manual");
+    Text::setSpaceHidden(true);
   }
 }

@@ -57,7 +57,24 @@ namespace {
 
   void demoMenuDraw()
   {
-    memset(state.fb->buffer, 0, state.fb->height * state.fb->stride);
+    // draw checkerboard pattern
+    uint16_t *buff = (uint16_t*)state.fb->buffer;
+    int offset = state.frame / 4;
+
+    for(int y=0; y<state.fb->height; ++y) {
+      for(int x=0; x<state.fb->width; ++x) {
+        bool isEven = (((x+offset) / 16) + ((y+offset) / 16)) % 2 == 0;
+        if(y < 30 || y > (int)(30 + demos.size() * 10))
+        {
+          *buff++ = isEven
+            ? color_to_packed16(color_t{0x44, 0x22, 0x33})
+            : color_to_packed16(color_t{0x22, 0x11, 0x11});
+        } else {
+          *buff++ = isEven ? color_to_packed16(color_t{0x11, 0x11, 0x11}) : 0;
+        }
+      }
+      buff += (state.fb->stride/2 - state.fb->width);
+    }
 
     auto press = joypad_get_buttons_pressed(JOYPAD_PORT_1);
     if(press.d_up || press.c_up)--nextDemoSel;
@@ -81,16 +98,22 @@ namespace {
     Text::setColor();
 
     int posY = 160;
-    Text::print(20, posY, "UP/DOWN/A - Select"); posY += 10;
-    Text::print(20, posY, "Start     - Open this Menu"); posY += 10;
-    Text::print(20, posY, "L/R       - Toggle Demo"); posY += 10;
+    Text::setSpaceHidden(false);
+    Text::print(20, posY, "D-Pad/A - Select     "); posY += 9;
+    Text::print(20, posY, "Start   - Open Menu  "); posY += 9;
+    Text::print(20, posY, "L/R     - Toggle Demo"); posY += 9;
 
     posY += 10;
 
+    Text::setColor({0xBB, 0xBB, 0xBB});
+    Text::print(20, posY, "Repo:"); posY += 9;
     Text::setColor({0x66, 0xFF, 0x33});
-    Text::print(20, posY, "Repo:"); posY += 10;
     Text::print(20, posY, "github.com/HailToDodongo/repeater64"); posY += 10;
+    Text::setColor({0x77, 0x77, 0x99});
+    Text::print(20, posY, "(C) 2025 Max Beboek (HailToDodongo)"); posY += 10;
     Text::setColor();
+
+    Text::setSpaceHidden(true);
   }
 }
 

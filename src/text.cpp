@@ -12,9 +12,15 @@ namespace {
 
   constinit int fbStride = 0x800;
   constinit uint16_t currColor = 0xFFFF;
+  constinit uint8_t ignoreChar = 0;
 
   #include "font.h"
   #include "font64.h"
+}
+
+void Text::setSpaceHidden(bool hidden)
+{
+  ignoreChar = hidden ? 0 : 0xFF;
 }
 
 void Text::setColor(color_t color)
@@ -35,7 +41,7 @@ int Text::print(int x, int y, const char *str) {
     ++x;
 
     uint64_t val;
-    if(charCode != 0)
+    if(charCode != ignoreChar)
     {
       for(int y=0; y<8; ++y) {
         for(int x=0; x<2; ++x) {
