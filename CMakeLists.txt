@@ -17,7 +17,7 @@ add_executable(rep64
         src/text.cpp
         src/miMemory.cpp
         src/demos/Repeat.cpp
-        src/demos/Sync.cpp
+        src/demos/RDPSync.cpp
         src/rdp/rdp.h
         src/rdp/rdp.cpp
         src/demos/VI.cpp

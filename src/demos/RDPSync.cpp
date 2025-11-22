@@ -14,7 +14,7 @@ namespace {
   constinit bool doWaterFX{};
 }
 
-namespace Demo::Sync
+namespace Demo::RDPSync
 {
   extern const char* const name = "RDP Fill-Mode Syncs";
 
