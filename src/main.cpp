@@ -40,7 +40,7 @@ namespace {
 
   constinit uint64_t frameTime = 0;
   constinit uint32_t currDemo = 0xFFFF;
-  constinit uint32_t nextDemo = 0;
+  constinit uint32_t nextDemo = 4;
 
   volatile int freeFB = 3;
   void on_vi_frame_ready()
@@ -143,6 +143,8 @@ int main()
   vi_set_divot(false);
   vi_set_gamma(VI_GAMMA_DISABLE);
   wait_ms(14);
+
+  assertf(get_tv_type() == TV_NTSC, "Please run ROM in NTSC mode!");
 
   disable_interrupts();
     register_VI_handler(on_vi_frame_ready);

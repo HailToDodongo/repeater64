@@ -53,11 +53,12 @@ sc64:
 	sc64deployer --remote 192.168.0.6:9064 upload --tv ntsc *.z64
 	curl 192.168.0.6:9065/on
 
-sc64r:
+sc64_pal:
 	make -j8
-	sc64deployer --remote 192.168.0.6:9064 upload --tv ntsc *.z64
+	curl 192.168.0.6:9065/off
 	sleep 1
-	curl 192.168.0.6:9065/reset
+	sc64deployer --remote 192.168.0.6:9064 upload --tv pal *.z64
+	curl 192.168.0.6:9065/on
 
 clean:
 	rm -rf $(BUILD_DIR) *.z64 src/demoList.h

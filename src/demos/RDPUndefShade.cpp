@@ -21,16 +21,16 @@ namespace
     return seed;
   }
 
-  float fixedRandfs() {
-    return ((fixedRand() & 0xFFFF) / 32768.0f) - 1.0f;
+  float fixedRandf() {
+    return ((fixedRand() & 0xFFFF) / (float)0xFFFF);
   }
 
   constinit RDPDumpTest dumpTest{
     .testCases = std::array<uint32_t, 20>({
-      0x73bfd1a2u, 0x3809113eu, 0x17d6a1e3u, 0x392df0aau, 0x0f4529b0u,
-      0x38bb9993u, 0x8216fc78u, 0x06868e65u, 0x255206b1u, 0x59b323c8u,
-      0x6f2489a4u, 0xa2aaae1du, 0xb6a33922u, 0x0a5212bbu, 0xf2dcebddu,
-      0xe58b24beu, 0x7be66493u, 0x9f605ee7u, 0x336a3a0au, 0xa3a56459u,
+      0x949db639u, 0x79e6622eu, 0xbff1a7abu, 0xb97daba5u, 0xf029c740u,
+      0xc221ef19u, 0x3e5e8f05u, 0x40cb07a2u, 0x32c9921au, 0x84f09d97u,
+      0x77107f77u, 0x63a04322u, 0x2804ac62u, 0x3419e23au, 0x33fd636fu,
+      0x563c6060u, 0x856d5300u, 0xdf19d3cfu, 0x1fc4b690u, 0x5c2f3fceu,
     }),
     .testRegion = std::array<int, 4>({
       16, 48, SCREEN_WIDTH-16, SCREEN_HEIGHT-48
@@ -38,9 +38,9 @@ namespace
   };
 }
 
-namespace Demo::RDPFillTri
+namespace Demo::RDPUndefShade
 {
-  extern const char* const name = "RDP Fill-Mode Triangles";
+  extern const char* const name = "RDP Undefined Shade";
 
   void init() {
     dumpTest.reset();
@@ -66,23 +66,30 @@ namespace Demo::RDPFillTri
         .runSync();
 
       float triPos[3][2]{
-        {fixedRandfs() * 150.0f, fixedRandfs() * 150.0f},
-        {fixedRandfs() * 150.0f, fixedRandfs() * 150.0f},
-        {fixedRandfs() * 150.0f, fixedRandfs() * 150.0f}
+        {fixedRandf() * 250.0f - 100.0f, fixedRandf() * 360.0f},
+        {fixedRandf() * 450.0f, fixedRandf() * 260.0f},
+        {fixedRandf() * 450.0f, fixedRandf() * 360.0f}
       };
-      for(auto &p : triPos) {
-        p[0] += SCREEN_WIDTH / 2.0f;
-        p[1] += SCREEN_HEIGHT / 2.0f;
-      }
 
-      RDP::DPL dplTri{64};
+      RDP::DPL dplTri{128};
       dplTri.add(RDP::syncPipe())
-        .add(RDP::setFillColor({0x22, 0x22, 0x22, 0}))
+        .add(RDP::setFillColor({0x11, 0x11, 0x22, 0}))
         .add(RDP::setScissor(dumpTest.testRegion[0], dumpTest.testRegion[1], dumpTest.testRegion[2], dumpTest.testRegion[3]))
         .add(RDP::fillRect(dumpTest.testRegion[0], dumpTest.testRegion[1], dumpTest.testRegion[2], dumpTest.testRegion[3]))
         .add(RDP::syncPipe())
 
-        .add(RDP::setFillColorRaw(fixedRand()))
+        .add(RDP::setOtherModes(RDP::OtherMode()
+          .cycleType(RDP::CYCLE::ONE)
+          .ditherRGBA(RDP::DitherRGB::DISABLED)
+          .ditherAlpha(RDP::DitherAlpha::DISABLED)
+          .setAA(false)
+          .forceBlend(false)
+          .setImageRead(false)
+          .setDepthWrite(false)
+        ))
+        .add(RDP::setCC(RDPQ_COMBINER1(
+          (0,0,0,SHADE), (0,0,0,1)))
+        )
         .add(RDP::triangle(0,
           {.pos = {triPos[0][0], triPos[0][1]}},
           {.pos = {triPos[1][0], triPos[1][1]}},

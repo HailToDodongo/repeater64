@@ -26,6 +26,9 @@ add_executable(rep64
         src/demos/HiddenBits.cpp
         src/demos/HiddenBits.cpp
         src/demos/RDPTestMode.cpp
-        src/demos/RDPFillTri.cpp)
+        src/demos/RDPFillTri.cpp
+        src/demos/RDPUndefShade.cpp
+        src/rdpDumpTest.h
+        src/rdpDumpTest.cpp)
 
 set_property(TARGET rep64 PROPERTY CXX_STANDARD 23)
