@@ -4,6 +4,8 @@ ROM and reference footage can be found under releases.
 
 **Note:** Please run this ROM in NTSC mode, otherwise VI effect may fail.
 
+[![Watch the video](https://img.youtube.com/vi/bRw4pr9IZL4/hqdefault.jpg)](https://www.youtube.com/embed/bRw4pr9IZL4)
+
 # Demos
 Explanations of each demo and what they are testing:
 
