@@ -29,6 +29,7 @@ add_executable(rep64
         src/demos/RDPFillTri.cpp
         src/demos/RDPUndefShade.cpp
         src/rdpDumpTest.h
-        src/rdpDumpTest.cpp)
+        src/rdpDumpTest.cpp
+        src/demos/RDPNoSync1C.cpp)
 
 set_property(TARGET rep64 PROPERTY CXX_STANDARD 23)

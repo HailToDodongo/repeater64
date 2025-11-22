@@ -15,7 +15,7 @@ assets_conv += $(patsubst assets/%,filesystem/%,$(assets_test:%.test=%.test))
 all: $(PROJECT_NAME).z64
 
 # Generate demoList.h by scanning files in src/demos/
-src/demoList.h: $(wildcard src/demos/*.cpp)
+src/demoList.h: $(sort $(wildcard src/demos/*.cpp))
 	@echo "    [DEMO LIST] $@"
 	@echo "// This file is auto-generated. Do not edit directly." > $@
 	@for f in $(wildcard src/demos/*.cpp); do \
